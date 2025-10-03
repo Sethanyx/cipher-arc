@@ -94,7 +94,7 @@ export const CurveConfig = ({ onCurveChange, currentCurve }: Props) => {
               placeholder="e.g., 223"
             />
             <p className="text-xs text-muted-foreground">
-              Must be a prime number for finite field operations
+              Recommended: p ≤ 1000. Larger values may cause performance issues.
             </p>
           </div>
         )}

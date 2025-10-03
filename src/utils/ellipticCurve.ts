@@ -48,6 +48,75 @@ export function modInverse(a: number, m: number): number {
   return mod(old_s, m);
 }
 
+// Modular exponentiation: (base^exp) % mod
+function modPow(base: number, exp: number, mod: number): number {
+  let result = 1;
+  base = base % mod;
+  while (exp > 0) {
+    if (exp % 2 === 1) {
+      result = (result * base) % mod;
+    }
+    exp = Math.floor(exp / 2);
+    base = (base * base) % mod;
+  }
+  return result;
+}
+
+// Tonelli-Shanks algorithm for modular square root
+function modSqrt(n: number, p: number): number[] {
+  n = mod(n, p);
+  
+  // Special case: p = 2
+  if (p === 2) return [n];
+  
+  // Check if n is a quadratic residue
+  if (modPow(n, (p - 1) / 2, p) !== 1) return [];
+  
+  // Special case: p ≡ 3 (mod 4)
+  if (p % 4 === 3) {
+    const r = modPow(n, (p + 1) / 4, p);
+    return [r, p - r];
+  }
+  
+  // General case: Tonelli-Shanks
+  let s = p - 1;
+  let e = 0;
+  while (s % 2 === 0) {
+    s /= 2;
+    e++;
+  }
+  
+  // Find a non-residue
+  let q = 2;
+  while (modPow(q, (p - 1) / 2, p) === 1) {
+    q++;
+  }
+  
+  let x = modPow(n, (s + 1) / 2, p);
+  let b = modPow(n, s, p);
+  let g = modPow(q, s, p);
+  let r = e;
+  
+  while (true) {
+    let t = b;
+    let m = 0;
+    for (m = 0; m < r; m++) {
+      if (t === 1) break;
+      t = modPow(t, 2, p);
+    }
+    
+    if (m === 0) {
+      return [x, p - x];
+    }
+    
+    const gs = modPow(g, 1 << (r - m - 1), p);
+    g = (gs * gs) % p;
+    x = (x * gs) % p;
+    b = (b * g) % p;
+    r = m;
+  }
+}
+
 // Check if point is on curve
 export function isOnCurve(point: Point, curve: CurveParams): boolean {
   if (point.isInfinity) return true;
@@ -115,19 +184,35 @@ export function scalarMultiply(k: number, P: Point, curve: CurveParams): Point {
   return result;
 }
 
-// Get all points on the curve
+// Get all points on the curve (optimized with Tonelli-Shanks)
 export function getAllPoints(curve: CurveParams): Point[] {
   const points: Point[] = [POINT_AT_INFINITY];
   const { a, b, p } = curve;
 
+  // Limit p to prevent browser freeze
+  if (p > 1000) {
+    console.warn(`Prime p=${p} is too large. Limiting point generation to sample points.`);
+    // For large p, only generate sample points
+    const sampleSize = Math.min(100, p);
+    const step = Math.floor(p / sampleSize);
+    for (let i = 0; i < p; i += step) {
+      const ySquared = mod(i * i * i + a * i + b, p);
+      const yValues = modSqrt(ySquared, p);
+      yValues.forEach(y => {
+        points.push({ x: i, y, isInfinity: false });
+      });
+    }
+    return points;
+  }
+
+  // For reasonable p values, use efficient algorithm
   for (let x = 0; x < p; x++) {
     const ySquared = mod(x * x * x + a * x + b, p);
-
-    for (let y = 0; y < p; y++) {
-      if (mod(y * y, p) === ySquared) {
-        points.push({ x, y, isInfinity: false });
-      }
-    }
+    const yValues = modSqrt(ySquared, p);
+    
+    yValues.forEach(y => {
+      points.push({ x, y, isInfinity: false });
+    });
   }
 
   return points;

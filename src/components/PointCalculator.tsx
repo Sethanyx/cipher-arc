@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,22 @@ export const PointCalculator = ({ curve, onVisualize }: Props) => {
   const [point2, setPoint2] = useState<Point | null>(null);
   const [scalar, setScalar] = useState<string>("2");
   const [result, setResult] = useState<Point | null>(null);
-  const [allPoints] = useState(() => getAllPoints(curve));
+  const [allPoints, setAllPoints] = useState<Point[]>(() => getAllPoints(curve));
+  const [loading, setLoading] = useState(false);
+
+  // Update points when curve changes
+  useEffect(() => {
+    setLoading(true);
+    // Use setTimeout to prevent blocking UI
+    setTimeout(() => {
+      const points = getAllPoints(curve);
+      setAllPoints(points);
+      setLoading(false);
+      setPoint1(null);
+      setPoint2(null);
+      setResult(null);
+    }, 0);
+  }, [curve]);
 
   const handlePointAddition = () => {
     if (point1 && point2) {
@@ -45,6 +60,11 @@ export const PointCalculator = ({ curve, onVisualize }: Props) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {loading && (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            Loading curve points...
+          </div>
+        )}
         {/* Point Selection */}
         <div className="space-y-4">
           <div className="grid gap-2">
