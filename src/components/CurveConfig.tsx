@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { CurveParams, Point } from "@/utils/ellipticCurve";
+import { CurveParams } from "@/utils/ellipticCurve";
 import { Settings } from "lucide-react";
 
 interface Props {
@@ -15,13 +14,12 @@ interface Props {
 export const CurveConfig = ({ onCurveChange, currentCurve }: Props) => {
   const [a, setA] = useState(currentCurve.a.toString());
   const [b, setB] = useState(currentCurve.b.toString());
-  const [useFp, setUseFp] = useState(true);
   const [p, setP] = useState(currentCurve.p.toString());
 
   const handleApply = () => {
     const newA = parseInt(a) || 0;
     const newB = parseInt(b) || 0;
-    const newP = useFp ? parseInt(p) || 223 : 1000000;
+    const newP = parseInt(p) || 223;
 
     const newCurve: CurveParams = {
       a: newA,
@@ -42,7 +40,7 @@ export const CurveConfig = ({ onCurveChange, currentCurve }: Props) => {
           Curve Configuration
         </CardTitle>
         <CardDescription>
-          Customize elliptic curve parameters: y² = x³ + ax + b {useFp && "(mod p)"}
+          Customize elliptic curve parameters: y² = x³ + ax + b (mod p)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -69,35 +67,19 @@ export const CurveConfig = ({ onCurveChange, currentCurve }: Props) => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-          <div className="space-y-0.5">
-            <Label htmlFor="use-fp">Use Finite Field (Fp)</Label>
-            <p className="text-xs text-muted-foreground">
-              Enable modular arithmetic with prime p
-            </p>
-          </div>
-          <Switch
-            id="use-fp"
-            checked={useFp}
-            onCheckedChange={setUseFp}
+        <div className="space-y-2">
+          <Label htmlFor="param-p">Prime Modulus (p)</Label>
+          <Input
+            id="param-p"
+            type="number"
+            value={p}
+            onChange={(e) => setP(e.target.value)}
+            placeholder="e.g., 223"
           />
+          <p className="text-xs text-muted-foreground">
+            Recommended: p ≤ 1000 for optimal performance. Must be prime for cryptographic applications.
+          </p>
         </div>
-
-        {useFp && (
-          <div className="space-y-2">
-            <Label htmlFor="param-p">Prime Modulus (p)</Label>
-            <Input
-              id="param-p"
-              type="number"
-              value={p}
-              onChange={(e) => setP(e.target.value)}
-              placeholder="e.g., 223"
-            />
-            <p className="text-xs text-muted-foreground">
-              Recommended: p ≤ 1000. Larger values may cause performance issues.
-            </p>
-          </div>
-        )}
 
         <Button onClick={handleApply} className="w-full">
           Apply Curve Parameters
