@@ -45,7 +45,7 @@ export const ECDHSimulator = ({ curve }: Props) => {
     const privateKey = generatePrivateKey(curve.n);
     const publicKey = computePublicKey(privateKey, curve);
     
-    setAlice({ ...alice, privateKey, publicKey });
+    setAlice(prev => ({ ...prev, privateKey, publicKey }));
     setCurrentStep(1);
     toast.success("Alice generated her key pair!");
   };
@@ -54,7 +54,7 @@ export const ECDHSimulator = ({ curve }: Props) => {
     const privateKey = generatePrivateKey(curve.n);
     const publicKey = computePublicKey(privateKey, curve);
     
-    setBob({ ...bob, privateKey, publicKey });
+    setBob(prev => ({ ...prev, privateKey, publicKey }));
     setCurrentStep(2);
     toast.success("Bob generated his key pair!");
   };
@@ -73,10 +73,17 @@ export const ECDHSimulator = ({ curve }: Props) => {
     const bobShared = deriveSharedSecret(bob.privateKey, alice.publicKey, curve);
     const bobAESKey = await deriveAESKey(bobShared.x!, bobShared.y!);
 
-    setAlice({ ...alice, sharedSecret: aliceShared, aesKey: aliceAESKey });
-    setBob({ ...bob, sharedSecret: bobShared, aesKey: bobAESKey });
+    // Use functional updates to preserve previous state
+    setAlice(prev => ({ ...prev, sharedSecret: aliceShared, aesKey: aliceAESKey }));
+    setBob(prev => ({ ...prev, sharedSecret: bobShared, aesKey: bobAESKey }));
     setCurrentStep(3);
-    toast.success("Shared secret established via ECDH!");
+    
+    // Verify shared secrets match
+    if (aliceShared.x === bobShared.x && aliceShared.y === bobShared.y) {
+      toast.success("Shared secret established via ECDH! Keys match.");
+    } else {
+      toast.error("Error: Shared secrets don't match!");
+    }
   };
 
   const encryptAndSend = async () => {
@@ -102,6 +109,9 @@ export const ECDHSimulator = ({ curve }: Props) => {
     }
 
     try {
+      console.log("Bob's AES Key:", bob.aesKey);
+      console.log("Encrypted data:", encryptedData);
+      
       const decrypted = await decryptMessage(
         encryptedData.ciphertext,
         encryptedData.iv,
@@ -111,7 +121,8 @@ export const ECDHSimulator = ({ curve }: Props) => {
       setCurrentStep(5);
       toast.success("Bob successfully decrypted the message!");
     } catch (error) {
-      toast.error("Decryption failed!");
+      console.error("Decryption error:", error);
+      toast.error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
