@@ -85,9 +85,8 @@ export const EllipticCurveCanvas = ({
     ctx.lineTo(toCanvasX(0), height - padding);
     ctx.stroke();
 
-    // Draw curve points (solid line through points)
+    // Draw curve as continuous line (no fill)
     ctx.strokeStyle = "hsl(var(--primary))";
-    ctx.fillStyle = "hsl(var(--primary) / 0.3)";
     ctx.lineWidth = 2;
 
     // Group points by x-coordinate and connect them
@@ -101,48 +100,47 @@ export const EllipticCurveCanvas = ({
       }
     });
 
-    // Sort x values and draw curve
+    // Sort x values and draw curve outline only
     const sortedX = Array.from(pointsByX.keys()).sort((a, b) => a - b);
     
+    // Draw upper curve
+    ctx.beginPath();
     sortedX.forEach((x, idx) => {
-      const yValues = pointsByX.get(x)!.sort((a, b) => a - b);
+      const yValues = pointsByX.get(x)!.sort((a, b) => b - a); // Sort descending
+      const upperY = yValues[0]; // Highest y value
       
-      // Draw vertical line segment if there are 2 points at this x
-      if (yValues.length === 2) {
-        ctx.beginPath();
-        ctx.moveTo(toCanvasX(x), toCanvasY(yValues[0]));
-        ctx.lineTo(toCanvasX(x), toCanvasY(yValues[1]));
-        ctx.stroke();
-      }
-      
-      // Connect to next x coordinate
-      if (idx < sortedX.length - 1) {
-        const nextX = sortedX[idx + 1];
-        const nextYValues = pointsByX.get(nextX)!;
-        
-        // Connect upper points
-        const upperY = Math.max(...yValues);
-        const nextUpperY = Math.max(...nextYValues);
-        ctx.beginPath();
+      if (idx === 0) {
         ctx.moveTo(toCanvasX(x), toCanvasY(upperY));
-        ctx.lineTo(toCanvasX(nextX), toCanvasY(nextUpperY));
-        ctx.stroke();
-        
-        // Connect lower points if they exist
-        if (yValues.length === 2 && nextYValues.length === 2) {
-          const lowerY = Math.min(...yValues);
-          const nextLowerY = Math.min(...nextYValues);
-          ctx.beginPath();
-          ctx.moveTo(toCanvasX(x), toCanvasY(lowerY));
-          ctx.lineTo(toCanvasX(nextX), toCanvasY(nextLowerY));
-          ctx.stroke();
-        }
+      } else {
+        ctx.lineTo(toCanvasX(x), toCanvasY(upperY));
       }
-
-      // Draw points
+    });
+    ctx.stroke();
+    
+    // Draw lower curve if exists (when there are 2 y values for x)
+    const hasLowerCurve = sortedX.some(x => pointsByX.get(x)!.length === 2);
+    if (hasLowerCurve) {
+      ctx.beginPath();
+      sortedX.forEach((x, idx) => {
+        const yValues = pointsByX.get(x)!.sort((a, b) => b - a); // Sort descending
+        const lowerY = yValues.length === 2 ? yValues[1] : yValues[0]; // Lowest y value
+        
+        if (idx === 0) {
+          ctx.moveTo(toCanvasX(x), toCanvasY(lowerY));
+        } else {
+          ctx.lineTo(toCanvasX(x), toCanvasY(lowerY));
+        }
+      });
+      ctx.stroke();
+    }
+    
+    // Draw small points on the curve
+    ctx.fillStyle = "hsl(var(--primary))";
+    sortedX.forEach(x => {
+      const yValues = pointsByX.get(x)!;
       yValues.forEach(y => {
         ctx.beginPath();
-        ctx.arc(toCanvasX(x), toCanvasY(y), 3, 0, 2 * Math.PI);
+        ctx.arc(toCanvasX(x), toCanvasY(y), 2, 0, 2 * Math.PI);
         ctx.fill();
       });
     });
