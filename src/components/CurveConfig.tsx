@@ -17,24 +17,18 @@ export const CurveConfig = ({ onCurveChange, currentCurve }: Props) => {
   const [b, setB] = useState(currentCurve.b.toString());
   const [useFp, setUseFp] = useState(true);
   const [p, setP] = useState(currentCurve.p.toString());
-  const [gx, setGx] = useState(currentCurve.G.x?.toString() || "47");
-  const [gy, setGy] = useState(currentCurve.G.y?.toString() || "71");
-  const [n, setN] = useState(currentCurve.n.toString());
 
   const handleApply = () => {
     const newA = parseInt(a) || 0;
     const newB = parseInt(b) || 0;
-    const newP = useFp ? parseInt(p) || 223 : 1000000; // Large number for non-Fp visualization
-    const newGx = parseInt(gx) || 47;
-    const newGy = parseInt(gy) || 71;
-    const newN = parseInt(n) || 227;
+    const newP = useFp ? parseInt(p) || 223 : 1000000;
 
     const newCurve: CurveParams = {
       a: newA,
       b: newB,
       p: newP,
-      G: { x: newGx, y: newGy, isInfinity: false },
-      n: newN,
+      G: currentCurve.G, // Keep existing G
+      n: currentCurve.n, // Keep existing n
     };
 
     onCurveChange(newCurve);
@@ -105,41 +99,13 @@ export const CurveConfig = ({ onCurveChange, currentCurve }: Props) => {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="g-x">Base Point G (x)</Label>
-            <Input
-              id="g-x"
-              type="number"
-              value={gx}
-              onChange={(e) => setGx(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="g-y">Base Point G (y)</Label>
-            <Input
-              id="g-y"
-              type="number"
-              value={gy}
-              onChange={(e) => setGy(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="param-n">Order of G (n)</Label>
-          <Input
-            id="param-n"
-            type="number"
-            value={n}
-            onChange={(e) => setN(e.target.value)}
-            placeholder="e.g., 227"
-          />
-        </div>
-
         <Button onClick={handleApply} className="w-full">
           Apply Curve Parameters
         </Button>
+        
+        <p className="text-xs text-muted-foreground text-center">
+          Base point G and order n are configured in the ECDH Protocol tab
+        </p>
       </CardContent>
     </Card>
   );

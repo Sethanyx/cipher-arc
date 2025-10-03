@@ -73,7 +73,7 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">a:</span>
                     <span className="ml-2 font-mono font-medium">{curve.a}</span>
@@ -85,16 +85,6 @@ const Index = () => {
                   <div>
                     <span className="text-muted-foreground">p:</span>
                     <span className="ml-2 font-mono font-medium">{curve.p}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">G:</span>
-                    <span className="ml-2 font-mono font-medium">
-                      ({curve.G.x}, {curve.G.y})
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">n:</span>
-                    <span className="ml-2 font-mono font-medium">{curve.n}</span>
                   </div>
                 </div>
               </CardContent>
@@ -111,7 +101,7 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">a:</span>
                     <span className="ml-2 font-mono font-medium">{curve.a}</span>
@@ -123,16 +113,6 @@ const Index = () => {
                   <div>
                     <span className="text-muted-foreground">p:</span>
                     <span className="ml-2 font-mono font-medium">{curve.p}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">G:</span>
-                    <span className="ml-2 font-mono font-medium">
-                      ({curve.G.x}, {curve.G.y})
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">n:</span>
-                    <span className="ml-2 font-mono font-medium">{curve.n}</span>
                   </div>
                 </div>
               </CardContent>
