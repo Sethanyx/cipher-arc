@@ -85,7 +85,7 @@ export const EllipticCurveCanvas = ({
     ctx.lineTo(toCanvasX(0), height - padding);
     ctx.stroke();
 
-    // Draw curve as continuous line (no fill)
+    // Draw curve as continuous smooth line (no points)
     ctx.strokeStyle = "hsl(var(--primary))";
     ctx.lineWidth = 2;
 
@@ -100,7 +100,7 @@ export const EllipticCurveCanvas = ({
       }
     });
 
-    // Sort x values and draw curve outline only
+    // Sort x values and draw smooth curve outline only
     const sortedX = Array.from(pointsByX.keys()).sort((a, b) => a - b);
     
     // Draw upper curve
@@ -133,17 +133,6 @@ export const EllipticCurveCanvas = ({
       });
       ctx.stroke();
     }
-    
-    // Draw small points on the curve
-    ctx.fillStyle = "hsl(var(--primary))";
-    sortedX.forEach(x => {
-      const yValues = pointsByX.get(x)!;
-      yValues.forEach(y => {
-        ctx.beginPath();
-        ctx.arc(toCanvasX(x), toCanvasY(y), 2, 0, 2 * Math.PI);
-        ctx.fill();
-      });
-    });
 
     // Draw addition line
     if (line && !line.from.isInfinity && !line.to.isInfinity) {
