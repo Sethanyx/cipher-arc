@@ -10,9 +10,10 @@ export interface Point {
 export interface CurveParams {
   a: number;
   b: number;
-  p: number; // prime modulus
+  p: number; // prime modulus (ignored if useFp=false)
   G: Point; // base point
   n: number; // order of base point
+  useFp: boolean; // whether to use finite field Fp or real numbers R
 }
 
 // Default curve parameters (simplified for visualization)
@@ -22,6 +23,7 @@ export const defaultCurve: CurveParams = {
   p: 223, // prime
   G: { x: 47, y: 71, isInfinity: false }, // base point
   n: 227, // order
+  useFp: true, // use finite field by default
 };
 
 export const POINT_AT_INFINITY: Point = {
@@ -122,11 +124,18 @@ export function isOnCurve(point: Point, curve: CurveParams): boolean {
   if (point.isInfinity) return true;
   if (point.x === null || point.y === null) return false;
 
-  const { a, b, p } = curve;
-  const left = mod(point.y * point.y, p);
-  const right = mod(point.x * point.x * point.x + a * point.x + b, p);
-
-  return left === right;
+  const { a, b, p, useFp } = curve;
+  
+  if (useFp) {
+    const left = mod(point.y * point.y, p);
+    const right = mod(point.x * point.x * point.x + a * point.x + b, p);
+    return left === right;
+  } else {
+    // Real numbers: y² = x³ + ax + b
+    const left = point.y * point.y;
+    const right = point.x * point.x * point.x + a * point.x + b;
+    return Math.abs(left - right) < 0.0001; // floating point tolerance
+  }
 }
 
 // Point addition on elliptic curve
@@ -134,7 +143,7 @@ export function addPoints(P: Point, Q: Point, curve: CurveParams): Point {
   if (P.isInfinity) return Q;
   if (Q.isInfinity) return P;
 
-  const { a, p } = curve;
+  const { a, p, useFp } = curve;
 
   // Check if P and Q are additive inverses
   if (P.x === Q.x && P.y !== Q.y) {
@@ -143,25 +152,48 @@ export function addPoints(P: Point, Q: Point, curve: CurveParams): Point {
 
   let slope: number;
 
-  if (P.x === Q.x && P.y === Q.y) {
-    // Point doubling
-    if (P.y === 0) {
-      return POINT_AT_INFINITY;
+  if (useFp) {
+    // Finite field arithmetic
+    if (P.x === Q.x && P.y === Q.y) {
+      // Point doubling
+      if (P.y === 0) {
+        return POINT_AT_INFINITY;
+      }
+      const numerator = mod(3 * P.x! * P.x! + a, p);
+      const denominator = mod(2 * P.y!, p);
+      slope = mod(numerator * modInverse(denominator, p), p);
+    } else {
+      // Point addition
+      const numerator = mod(Q.y! - P.y!, p);
+      const denominator = mod(Q.x! - P.x!, p);
+      slope = mod(numerator * modInverse(denominator, p), p);
     }
-    const numerator = mod(3 * P.x! * P.x! + a, p);
-    const denominator = mod(2 * P.y!, p);
-    slope = mod(numerator * modInverse(denominator, p), p);
+
+    const x3 = mod(slope * slope - P.x! - Q.x!, p);
+    const y3 = mod(slope * (P.x! - x3) - P.y!, p);
+
+    return { x: x3, y: y3, isInfinity: false };
   } else {
-    // Point addition
-    const numerator = mod(Q.y! - P.y!, p);
-    const denominator = mod(Q.x! - P.x!, p);
-    slope = mod(numerator * modInverse(denominator, p), p);
+    // Real number arithmetic
+    if (P.x === Q.x && P.y === Q.y) {
+      // Point doubling
+      if (P.y === 0) {
+        return POINT_AT_INFINITY;
+      }
+      slope = (3 * P.x! * P.x! + a) / (2 * P.y!);
+    } else {
+      // Point addition
+      if (Q.x === P.x) {
+        return POINT_AT_INFINITY;
+      }
+      slope = (Q.y! - P.y!) / (Q.x! - P.x!);
+    }
+
+    const x3 = slope * slope - P.x! - Q.x!;
+    const y3 = slope * (P.x! - x3) - P.y!;
+
+    return { x: x3, y: y3, isInfinity: false };
   }
-
-  const x3 = mod(slope * slope - P.x! - Q.x!, p);
-  const y3 = mod(slope * (P.x! - x3) - P.y!, p);
-
-  return { x: x3, y: y3, isInfinity: false };
 }
 
 // Scalar multiplication (k * P)
@@ -187,9 +219,28 @@ export function scalarMultiply(k: number, P: Point, curve: CurveParams): Point {
 // Get all points on the curve (optimized with Tonelli-Shanks)
 export function getAllPoints(curve: CurveParams): Point[] {
   const points: Point[] = [POINT_AT_INFINITY];
-  const { a, b, p } = curve;
+  const { a, b, p, useFp } = curve;
 
-  // Limit p to prevent browser freeze
+  if (!useFp) {
+    // For real numbers, generate points in range [-10, 10]
+    const xMin = -10;
+    const xMax = 10;
+    const step = 0.1;
+    
+    for (let x = xMin; x <= xMax; x += step) {
+      const ySquared = x * x * x + a * x + b;
+      if (ySquared >= 0) {
+        const y = Math.sqrt(ySquared);
+        points.push({ x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), isInfinity: false });
+        if (y !== 0) {
+          points.push({ x: Number(x.toFixed(2)), y: Number((-y).toFixed(2)), isInfinity: false });
+        }
+      }
+    }
+    return points;
+  }
+
+  // Finite field: Limit p to prevent browser freeze
   if (p > 1000) {
     console.warn(`Prime p=${p} is too large. Limiting point generation to sample points.`);
     // For large p, only generate sample points

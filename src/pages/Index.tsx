@@ -73,7 +73,7 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">a:</span>
                     <span className="ml-2 font-mono font-medium">{curve.a}</span>
@@ -82,9 +82,15 @@ const Index = () => {
                     <span className="text-muted-foreground">b:</span>
                     <span className="ml-2 font-mono font-medium">{curve.b}</span>
                   </div>
+                  {curve.useFp && (
+                    <div>
+                      <span className="text-muted-foreground">p:</span>
+                      <span className="ml-2 font-mono font-medium">{curve.p}</span>
+                    </div>
+                  )}
                   <div>
-                    <span className="text-muted-foreground">p:</span>
-                    <span className="ml-2 font-mono font-medium">{curve.p}</span>
+                    <span className="text-muted-foreground">Field:</span>
+                    <span className="ml-2 font-mono font-medium">{curve.useFp ? '𝔽ₚ' : 'ℝ'}</span>
                   </div>
                 </div>
               </CardContent>
@@ -101,7 +107,7 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">a:</span>
                     <span className="ml-2 font-mono font-medium">{curve.a}</span>
@@ -110,9 +116,15 @@ const Index = () => {
                     <span className="text-muted-foreground">b:</span>
                     <span className="ml-2 font-mono font-medium">{curve.b}</span>
                   </div>
+                  {curve.useFp && (
+                    <div>
+                      <span className="text-muted-foreground">p:</span>
+                      <span className="ml-2 font-mono font-medium">{curve.p}</span>
+                    </div>
+                  )}
                   <div>
-                    <span className="text-muted-foreground">p:</span>
-                    <span className="ml-2 font-mono font-medium">{curve.p}</span>
+                    <span className="text-muted-foreground">Field:</span>
+                    <span className="ml-2 font-mono font-medium">{curve.useFp ? '𝔽ₚ' : 'ℝ'}</span>
                   </div>
                 </div>
               </CardContent>

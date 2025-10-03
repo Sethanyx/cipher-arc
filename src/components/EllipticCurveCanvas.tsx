@@ -37,19 +37,30 @@ export const EllipticCurveCanvas = ({
     const width = canvas.width;
     const height = canvas.height;
     const padding = 40;
+    
+    // Determine scale based on whether using Fp or R
+    const range = curve.useFp ? curve.p : 20; // For R, use range [-10, 10] = 20
     const scale = Math.min(
-      (width - 2 * padding) / curve.p,
-      (height - 2 * padding) / curve.p
+      (width - 2 * padding) / range,
+      (height - 2 * padding) / range
     );
 
     // Transform coordinates
-    const toCanvasX = (x: number) => padding + x * scale;
-    const toCanvasY = (y: number) => height - padding - y * scale;
+    const toCanvasX = (x: number) => curve.useFp 
+      ? padding + x * scale 
+      : padding + (x + 10) * scale; // Shift for negative x in R
+    const toCanvasY = (y: number) => curve.useFp
+      ? height - padding - y * scale
+      : height - padding - (y + 10) * scale; // Shift for negative y in R
 
     // Draw grid
     ctx.strokeStyle = "hsl(var(--border))";
     ctx.lineWidth = 0.5;
-    for (let i = 0; i <= curve.p; i += Math.floor(curve.p / 10)) {
+    const gridStep = curve.useFp ? Math.floor(curve.p / 10) : 2;
+    const gridStart = curve.useFp ? 0 : -10;
+    const gridEnd = curve.useFp ? curve.p : 10;
+    
+    for (let i = gridStart; i <= gridEnd; i += gridStep) {
       ctx.beginPath();
       ctx.moveTo(toCanvasX(i), padding);
       ctx.lineTo(toCanvasX(i), height - padding);
