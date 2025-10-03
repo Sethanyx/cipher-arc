@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { EllipticCurveCanvas } from "@/components/EllipticCurveCanvas";
 import { PointCalculator } from "@/components/PointCalculator";
 import { ECDHSimulator } from "@/components/ECDHSimulator";
-import { defaultCurve, Point, POINT_AT_INFINITY } from "@/utils/ellipticCurve";
+import { CurveConfig } from "@/components/CurveConfig";
+import { defaultCurve, Point, POINT_AT_INFINITY, CurveParams } from "@/utils/ellipticCurve";
 import { Lock } from "lucide-react";
 
 const Index = () => {
+  const [curve, setCurve] = useState<CurveParams>(defaultCurve);
   const [visualizationLine, setVisualizationLine] = useState<{
     from: Point;
     to: Point;
@@ -44,11 +46,60 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="visualization" className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+        <Tabs defaultValue="config" className="space-y-6">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
+            <TabsTrigger value="config">Configuration</TabsTrigger>
             <TabsTrigger value="visualization">Curve & Operations</TabsTrigger>
             <TabsTrigger value="protocol">ECDH Protocol</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="config" className="space-y-6">
+            <div className="max-w-2xl mx-auto">
+              <CurveConfig 
+                currentCurve={curve} 
+                onCurveChange={(newCurve) => {
+                  setCurve(newCurve);
+                  setVisualizationLine(null);
+                }} 
+              />
+            </div>
+
+            {/* Current Parameters Display */}
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle>Current Curve Parameters</CardTitle>
+                <CardDescription>
+                  Curve equation: y² = x³ + ax + b (mod p)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">a:</span>
+                    <span className="ml-2 font-mono font-medium">{curve.a}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">b:</span>
+                    <span className="ml-2 font-mono font-medium">{curve.b}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">p:</span>
+                    <span className="ml-2 font-mono font-medium">{curve.p}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">G:</span>
+                    <span className="ml-2 font-mono font-medium">
+                      ({curve.G.x}, {curve.G.y})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">n:</span>
+                    <span className="ml-2 font-mono font-medium">{curve.n}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="visualization" className="space-y-6">
             {/* Curve Info */}
@@ -63,25 +114,25 @@ const Index = () => {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">a:</span>
-                    <span className="ml-2 font-mono font-medium">{defaultCurve.a}</span>
+                    <span className="ml-2 font-mono font-medium">{curve.a}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">b:</span>
-                    <span className="ml-2 font-mono font-medium">{defaultCurve.b}</span>
+                    <span className="ml-2 font-mono font-medium">{curve.b}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">p:</span>
-                    <span className="ml-2 font-mono font-medium">{defaultCurve.p}</span>
+                    <span className="ml-2 font-mono font-medium">{curve.p}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">G:</span>
                     <span className="ml-2 font-mono font-medium">
-                      ({defaultCurve.G.x}, {defaultCurve.G.y})
+                      ({curve.G.x}, {curve.G.y})
                     </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">n:</span>
-                    <span className="ml-2 font-mono font-medium">{defaultCurve.n}</span>
+                    <span className="ml-2 font-mono font-medium">{curve.n}</span>
                   </div>
                 </div>
               </CardContent>
@@ -98,19 +149,19 @@ const Index = () => {
                 </CardHeader>
                 <CardContent className="flex justify-center">
                   <EllipticCurveCanvas
-                    curve={defaultCurve}
+                    curve={curve}
                     line={visualizationLine || undefined}
                   />
                 </CardContent>
               </Card>
 
               {/* Calculator */}
-              <PointCalculator curve={defaultCurve} onVisualize={handleVisualize} />
+              <PointCalculator curve={curve} onVisualize={handleVisualize} />
             </div>
           </TabsContent>
 
           <TabsContent value="protocol">
-            <ECDHSimulator curve={defaultCurve} />
+            <ECDHSimulator curve={curve} />
           </TabsContent>
         </Tabs>
       </main>
