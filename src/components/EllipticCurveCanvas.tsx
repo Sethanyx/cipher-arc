@@ -53,24 +53,7 @@ export const EllipticCurveCanvas = ({
       ? height - padding - y * scale
       : height - padding - (y + 10) * scale; // Shift for negative y in R
 
-    // Draw grid
-    ctx.strokeStyle = "hsl(var(--border))";
-    ctx.lineWidth = 0.5;
-    const gridStep = curve.useFp ? Math.floor(curve.p / 10) : 2;
-    const gridStart = curve.useFp ? 0 : -10;
-    const gridEnd = curve.useFp ? curve.p : 10;
-    
-    for (let i = gridStart; i <= gridEnd; i += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(toCanvasX(i), padding);
-      ctx.lineTo(toCanvasX(i), height - padding);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(padding, toCanvasY(i));
-      ctx.lineTo(width - padding, toCanvasY(i));
-      ctx.stroke();
-    }
+    // Grid removed - only showing axes, curve, and points
 
     // Draw axes
     ctx.strokeStyle = "hsl(var(--foreground))";
