@@ -116,7 +116,7 @@ export const EllipticCurveCanvas = ({
 
     // Draw curve as continuous smooth line
     ctx.strokeStyle = "hsl(var(--primary))";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3; // Thicker curve
 
     if (curve.useFp) {
       // For finite field: use discrete points
@@ -264,7 +264,7 @@ export const EllipticCurveCanvas = ({
     // Draw addition line
     if (line && !line.from.isInfinity && !line.to.isInfinity) {
       ctx.strokeStyle = "#f59e0b"; // Orange/amber for operation line
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3; // Thicker line
       ctx.setLineDash([5, 5]);
 
       const x1 = toCanvasX(line.from.x!);
@@ -322,7 +322,7 @@ export const EllipticCurveCanvas = ({
         
         // Draw vertical reflection line extending full height
         ctx.strokeStyle = "#10b981"; // Green for reflection line
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3; // Thicker line
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
         ctx.moveTo(rx, padding);
