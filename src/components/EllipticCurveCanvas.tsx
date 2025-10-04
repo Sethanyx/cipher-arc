@@ -39,7 +39,11 @@ export const EllipticCurveCanvas = ({
     const padding = 40;
     
     // Determine scale based on whether using Fp or R
-    const range = curve.useFp ? curve.p : 20; // For R, use range [-10, 10] = 20
+    // For Fp: use the full field range
+    // For R: use a smaller range around [-6, 6] for better visibility
+    const range = curve.useFp ? curve.p : 12; // For R, use range [-6, 6] = 12
+    const offset = curve.useFp ? 0 : 6; // Center offset for R
+    
     const scale = Math.min(
       (width - 2 * padding) / range,
       (height - 2 * padding) / range
@@ -48,10 +52,10 @@ export const EllipticCurveCanvas = ({
     // Transform coordinates
     const toCanvasX = (x: number) => curve.useFp 
       ? padding + x * scale 
-      : padding + (x + 10) * scale; // Shift for negative x in R
+      : padding + (x + offset) * scale; // Shift for negative x in R
     const toCanvasY = (y: number) => curve.useFp
       ? height - padding - y * scale
-      : height - padding - (y + 10) * scale; // Shift for negative y in R
+      : height - padding - (y + offset) * scale; // Shift for negative y in R
 
     // Grid removed - only showing axes, curve, and points
 
