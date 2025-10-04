@@ -72,53 +72,105 @@ export const EllipticCurveCanvas = ({
     ctx.lineTo(toCanvasX(0), height - padding);
     ctx.stroke();
 
+    // Draw axis labels
+    ctx.fillStyle = "hsl(var(--foreground))";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+
+    // X-axis labels
+    const xStart = curve.useFp ? 0 : -offset;
+    const xEnd = curve.useFp ? curve.p : offset;
+    const xStep = curve.useFp ? Math.max(1, Math.floor(curve.p / 10)) : 1;
+    
+    for (let x = xStart; x <= xEnd; x += xStep) {
+      if (x === 0) continue; // Skip origin
+      const canvasX = toCanvasX(x);
+      // Draw tick mark
+      ctx.beginPath();
+      ctx.moveTo(canvasX, toCanvasY(0) - 5);
+      ctx.lineTo(canvasX, toCanvasY(0) + 5);
+      ctx.stroke();
+      // Draw label
+      ctx.fillText(x.toString(), canvasX, toCanvasY(0) + 8);
+    }
+
+    // Y-axis labels
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    const yStart = curve.useFp ? 0 : -offset;
+    const yEnd = curve.useFp ? curve.p : offset;
+    const yStep = curve.useFp ? Math.max(1, Math.floor(curve.p / 10)) : 1;
+    
+    for (let y = yStart; y <= yEnd; y += yStep) {
+      if (y === 0) continue; // Skip origin
+      const canvasY = toCanvasY(y);
+      // Draw tick mark
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(0) - 5, canvasY);
+      ctx.lineTo(toCanvasX(0) + 5, canvasY);
+      ctx.stroke();
+      // Draw label
+      ctx.fillText(y.toString(), toCanvasX(0) - 8, canvasY);
+    }
+
     // Draw curve as continuous smooth line (no points)
     ctx.strokeStyle = "hsl(var(--primary))";
     ctx.lineWidth = 2;
 
     // Group points by x-coordinate and connect them
     const pointsByX = new Map<number, number[]>();
+    const visibleRange = curve.useFp 
+      ? { min: 0, max: curve.p } 
+      : { min: -offset, max: offset };
+    
     allCurvePoints.forEach(point => {
       if (!point.isInfinity && point.x !== null && point.y !== null) {
-        if (!pointsByX.has(point.x)) {
-          pointsByX.set(point.x, []);
+        // Only include points within visible range
+        if (point.x >= visibleRange.min && point.x <= visibleRange.max &&
+            point.y >= visibleRange.min && point.y <= visibleRange.max) {
+          if (!pointsByX.has(point.x)) {
+            pointsByX.set(point.x, []);
+          }
+          pointsByX.get(point.x)!.push(point.y);
         }
-        pointsByX.get(point.x)!.push(point.y);
       }
     });
 
     // Sort x values and draw smooth curve outline only
     const sortedX = Array.from(pointsByX.keys()).sort((a, b) => a - b);
     
-    // Draw upper curve
-    ctx.beginPath();
-    sortedX.forEach((x, idx) => {
-      const yValues = pointsByX.get(x)!.sort((a, b) => b - a); // Sort descending
-      const upperY = yValues[0]; // Highest y value
-      
-      if (idx === 0) {
-        ctx.moveTo(toCanvasX(x), toCanvasY(upperY));
-      } else {
-        ctx.lineTo(toCanvasX(x), toCanvasY(upperY));
-      }
-    });
-    ctx.stroke();
-    
-    // Draw lower curve if exists (when there are 2 y values for x)
-    const hasLowerCurve = sortedX.some(x => pointsByX.get(x)!.length === 2);
-    if (hasLowerCurve) {
+    if (sortedX.length > 0) {
+      // Draw upper curve
       ctx.beginPath();
       sortedX.forEach((x, idx) => {
         const yValues = pointsByX.get(x)!.sort((a, b) => b - a); // Sort descending
-        const lowerY = yValues.length === 2 ? yValues[1] : yValues[0]; // Lowest y value
+        const upperY = yValues[0]; // Highest y value
         
         if (idx === 0) {
-          ctx.moveTo(toCanvasX(x), toCanvasY(lowerY));
+          ctx.moveTo(toCanvasX(x), toCanvasY(upperY));
         } else {
-          ctx.lineTo(toCanvasX(x), toCanvasY(lowerY));
+          ctx.lineTo(toCanvasX(x), toCanvasY(upperY));
         }
       });
       ctx.stroke();
+      
+      // Draw lower curve if exists (when there are 2 y values for x)
+      const hasLowerCurve = sortedX.some(x => pointsByX.get(x)!.length === 2);
+      if (hasLowerCurve) {
+        ctx.beginPath();
+        sortedX.forEach((x, idx) => {
+          const yValues = pointsByX.get(x)!.sort((a, b) => b - a); // Sort descending
+          const lowerY = yValues.length === 2 ? yValues[1] : yValues[0]; // Lowest y value
+          
+          if (idx === 0) {
+            ctx.moveTo(toCanvasX(x), toCanvasY(lowerY));
+          } else {
+            ctx.lineTo(toCanvasX(x), toCanvasY(lowerY));
+          }
+        });
+        ctx.stroke();
+      }
     }
 
     // Draw addition line
