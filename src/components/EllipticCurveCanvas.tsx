@@ -114,59 +114,100 @@ export const EllipticCurveCanvas = ({
       ctx.fillText(y.toString(), toCanvasX(0) - 8, canvasY);
     }
 
-    // Draw curve as continuous smooth line (no points)
+    // Draw curve as continuous smooth line
     ctx.strokeStyle = "hsl(var(--primary))";
     ctx.lineWidth = 2;
 
-    // Group points by x-coordinate and connect them
-    const pointsByX = new Map<number, number[]>();
-    const visibleRange = curve.useFp 
-      ? { min: 0, max: curve.p } 
-      : { min: -offset, max: offset };
-    
-    allCurvePoints.forEach(point => {
-      if (!point.isInfinity && point.x !== null && point.y !== null) {
-        // Only include points within visible range
-        if (point.x >= visibleRange.min && point.x <= visibleRange.max &&
-            point.y >= visibleRange.min && point.y <= visibleRange.max) {
+    if (curve.useFp) {
+      // For finite field: use discrete points
+      const pointsByX = new Map<number, number[]>();
+      
+      allCurvePoints.forEach(point => {
+        if (!point.isInfinity && point.x !== null && point.y !== null) {
           if (!pointsByX.has(point.x)) {
             pointsByX.set(point.x, []);
           }
           pointsByX.get(point.x)!.push(point.y);
         }
-      }
-    });
-
-    // Sort x values and draw smooth curve outline only
-    const sortedX = Array.from(pointsByX.keys()).sort((a, b) => a - b);
-    
-    if (sortedX.length > 0) {
-      // Draw upper curve
-      ctx.beginPath();
-      sortedX.forEach((x, idx) => {
-        const yValues = pointsByX.get(x)!.sort((a, b) => b - a); // Sort descending
-        const upperY = yValues[0]; // Highest y value
-        
-        if (idx === 0) {
-          ctx.moveTo(toCanvasX(x), toCanvasY(upperY));
-        } else {
-          ctx.lineTo(toCanvasX(x), toCanvasY(upperY));
-        }
       });
-      ctx.stroke();
+
+      const sortedX = Array.from(pointsByX.keys()).sort((a, b) => a - b);
       
-      // Draw lower curve if exists (when there are 2 y values for x)
-      const hasLowerCurve = sortedX.some(x => pointsByX.get(x)!.length === 2);
-      if (hasLowerCurve) {
+      if (sortedX.length > 0) {
+        // Draw upper curve
         ctx.beginPath();
         sortedX.forEach((x, idx) => {
-          const yValues = pointsByX.get(x)!.sort((a, b) => b - a); // Sort descending
-          const lowerY = yValues.length === 2 ? yValues[1] : yValues[0]; // Lowest y value
+          const yValues = pointsByX.get(x)!.sort((a, b) => b - a);
+          const upperY = yValues[0];
           
           if (idx === 0) {
-            ctx.moveTo(toCanvasX(x), toCanvasY(lowerY));
+            ctx.moveTo(toCanvasX(x), toCanvasY(upperY));
           } else {
-            ctx.lineTo(toCanvasX(x), toCanvasY(lowerY));
+            ctx.lineTo(toCanvasX(x), toCanvasY(upperY));
+          }
+        });
+        ctx.stroke();
+        
+        // Draw lower curve
+        const hasLowerCurve = sortedX.some(x => pointsByX.get(x)!.length === 2);
+        if (hasLowerCurve) {
+          ctx.beginPath();
+          sortedX.forEach((x, idx) => {
+            const yValues = pointsByX.get(x)!.sort((a, b) => b - a);
+            const lowerY = yValues.length === 2 ? yValues[1] : yValues[0];
+            
+            if (idx === 0) {
+              ctx.moveTo(toCanvasX(x), toCanvasY(lowerY));
+            } else {
+              ctx.lineTo(toCanvasX(x), toCanvasY(lowerY));
+            }
+          });
+          ctx.stroke();
+        }
+      }
+    } else {
+      // For real numbers: draw smooth continuous curve with dense sampling
+      const xMin = -offset;
+      const xMax = offset;
+      const step = 0.01; // Very small step for smooth curve
+      const { a, b } = curve;
+      
+      // Collect points for upper and lower curves
+      const upperPoints: Array<{x: number, y: number}> = [];
+      const lowerPoints: Array<{x: number, y: number}> = [];
+      
+      for (let x = xMin; x <= xMax; x += step) {
+        const ySquared = x * x * x + a * x + b;
+        if (ySquared >= 0) {
+          const y = Math.sqrt(ySquared);
+          upperPoints.push({ x, y });
+          if (y !== 0) {
+            lowerPoints.push({ x, y: -y });
+          }
+        }
+      }
+      
+      // Draw upper curve
+      if (upperPoints.length > 0) {
+        ctx.beginPath();
+        upperPoints.forEach((point, idx) => {
+          if (idx === 0) {
+            ctx.moveTo(toCanvasX(point.x), toCanvasY(point.y));
+          } else {
+            ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
+          }
+        });
+        ctx.stroke();
+      }
+      
+      // Draw lower curve
+      if (lowerPoints.length > 0) {
+        ctx.beginPath();
+        lowerPoints.forEach((point, idx) => {
+          if (idx === 0) {
+            ctx.moveTo(toCanvasX(point.x), toCanvasY(point.y));
+          } else {
+            ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
           }
         });
         ctx.stroke();
