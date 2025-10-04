@@ -263,7 +263,7 @@ export const EllipticCurveCanvas = ({
 
     // Draw addition line
     if (line && !line.from.isInfinity && !line.to.isInfinity) {
-      ctx.strokeStyle = "hsl(var(--secondary))";
+      ctx.strokeStyle = "#f59e0b"; // Orange/amber for operation line
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 5]);
 
@@ -287,43 +287,42 @@ export const EllipticCurveCanvas = ({
       ctx.setLineDash([]);
 
       // Draw P point and label
-      ctx.fillStyle = "hsl(var(--secondary))";
+      ctx.fillStyle = "#3b82f6"; // Blue for P
       ctx.strokeStyle = "hsl(var(--background))";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(x1, y1, 6, 0, 2 * Math.PI);
+      ctx.arc(x1, y1, 7, 0, 2 * Math.PI);
       ctx.fill();
       ctx.stroke();
       
-      ctx.fillStyle = "hsl(var(--foreground))";
-      ctx.font = "bold 14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillText("P", x1, y1 - 10);
+      ctx.fillStyle = "#3b82f6";
+      ctx.font = "bold 16px sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText("P", x1 - 12, y1);
 
       // Draw Q point and label
-      ctx.fillStyle = "hsl(var(--secondary))";
+      ctx.fillStyle = "#8b5cf6"; // Purple for Q
       ctx.strokeStyle = "hsl(var(--background))";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(x2, y2, 6, 0, 2 * Math.PI);
+      ctx.arc(x2, y2, 7, 0, 2 * Math.PI);
       ctx.fill();
       ctx.stroke();
       
-      ctx.fillStyle = "hsl(var(--foreground))";
-      ctx.textBaseline = "bottom";
-      ctx.fillText("Q", x2, y2 - 10);
+      ctx.fillStyle = "#8b5cf6";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Q", x2 + 12, y2);
 
       // Draw result point if exists
       if (line.result && !line.result.isInfinity) {
-        ctx.fillStyle = "hsl(var(--accent))";
-        ctx.strokeStyle = "hsl(var(--accent))";
-        ctx.lineWidth = 3;
-        
         const rx = toCanvasX(line.result.x!);
         const ry = toCanvasY(line.result.y!);
         
         // Draw vertical reflection line extending full height
+        ctx.strokeStyle = "#10b981"; // Green for reflection line
+        ctx.lineWidth = 2;
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
         ctx.moveTo(rx, padding);
@@ -332,19 +331,20 @@ export const EllipticCurveCanvas = ({
         ctx.setLineDash([]);
 
         // Draw result point
-        ctx.beginPath();
-        ctx.arc(rx, ry, 6, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.fillStyle = "#ef4444"; // Red for R
         ctx.strokeStyle = "hsl(var(--background))";
         ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(rx, ry, 7, 0, 2 * Math.PI);
+        ctx.fill();
         ctx.stroke();
         
-        // Draw R label
-        ctx.fillStyle = "hsl(var(--foreground))";
-        ctx.font = "bold 14px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText("R", rx, ry - 10);
+        // Draw R label - position based on whether point is in upper or lower half
+        ctx.fillStyle = "#ef4444";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText("R", rx + 12, ry);
       }
     }
 
