@@ -166,52 +166,99 @@ export const EllipticCurveCanvas = ({
         }
       }
     } else {
-      // For real numbers: draw smooth continuous curve with dense sampling
+      // For real numbers: continuous curve with adaptive segmentation and exact x-intercepts
       const xMin = -offset;
       const xMax = offset;
-      const step = 0.01; // Very small step for smooth curve
+      const dx = 0.002; // finer step for smoother rendering
       const { a, b } = curve;
-      
-      // Collect points for upper and lower curves
-      const upperPoints: Array<{x: number, y: number}> = [];
-      const lowerPoints: Array<{x: number, y: number}> = [];
-      
-      for (let x = xMin; x <= xMax; x += step) {
-        const ySquared = x * x * x + a * x + b;
-        if (ySquared >= 0) {
-          const y = Math.sqrt(ySquared);
-          upperPoints.push({ x, y });
-          if (y !== 0) {
-            lowerPoints.push({ x, y: -y });
+
+      const f = (x: number) => x * x * x + a * x + b;
+
+      // Bisection root finder within [l, r]
+      const bisect = (l: number, r: number, tol = 1e-6, maxIter = 60) => {
+        let fl = f(l);
+        let fr = f(r);
+        if (isNaN(fl) || isNaN(fr)) return null;
+        if (fl === 0) return l;
+        if (fr === 0) return r;
+        if (fl * fr > 0) return null;
+        for (let i = 0; i < maxIter; i++) {
+          const m = 0.5 * (l + r);
+          const fm = f(m);
+          if (Math.abs(fm) < tol || Math.abs(r - l) < tol) return m;
+          if (fl * fm <= 0) {
+            r = m; fr = fm;
+          } else {
+            l = m; fl = fm;
           }
         }
+        return 0.5 * (l + r);
+      };
+
+      // Precompute roots in visible range
+      const roots: number[] = [];
+      const coarse = 0.25;
+      for (let x = xMin; x < xMax; x += coarse) {
+        const x2 = Math.min(x + coarse, xMax);
+        const fx1 = f(x);
+        const fx2 = f(x2);
+        if (fx1 === 0) roots.push(x);
+        if (fx1 * fx2 <= 0) {
+          const r = bisect(x, x2);
+          if (r !== null && r >= xMin && r <= xMax) roots.push(r);
+        }
       }
-      
-      // Draw upper curve
-      if (upperPoints.length > 0) {
-        ctx.beginPath();
-        upperPoints.forEach((point, idx) => {
-          if (idx === 0) {
-            ctx.moveTo(toCanvasX(point.x), toCanvasY(point.y));
-          } else {
-            ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
+      roots.sort((m, n) => m - n);
+
+      // Helper to draw a branch (ySign = +1 for upper, -1 for lower)
+      const drawBranch = (ySign: 1 | -1) => {
+        let inSeg = false;
+        let prevX = xMin;
+        let prevY = 0;
+        for (let x = xMin; x <= xMax; x += dx) {
+          const val = f(x);
+          if (val >= 0) {
+            const y = ySign * Math.sqrt(val);
+            // If there is a root between prevX and x, connect exactly to root
+            if (inSeg) {
+              const r = roots.find((rt) => rt >= prevX && rt <= x);
+              if (r !== undefined) {
+                ctx.lineTo(toCanvasX(r), toCanvasY(0));
+              }
+              ctx.lineTo(toCanvasX(x), toCanvasY(y));
+            } else {
+              // Start new segment, check if starting exactly at a root
+              const atRoot = roots.find((rt) => Math.abs(rt - x) < dx * 1.1);
+              ctx.beginPath();
+              ctx.moveTo(toCanvasX(atRoot ?? x), toCanvasY(atRoot !== undefined ? 0 : y));
+              if (atRoot !== undefined) {
+                // Move slightly forward to start curve after root
+                const x2 = Math.min(x + dx, xMax);
+                const val2 = f(x2);
+                if (val2 >= 0) {
+                  const y2 = ySign * Math.sqrt(val2);
+                  ctx.lineTo(toCanvasX(x2), toCanvasY(y2));
+                }
+              }
+              inSeg = true;
+            }
+            prevX = x; prevY = y;
+          } else if (inSeg) {
+            // Close current segment at the nearest root ahead
+            const r = roots.find((rt) => rt >= prevX && rt <= x);
+            if (r !== undefined) {
+              ctx.lineTo(toCanvasX(r), toCanvasY(0));
+            }
+            ctx.stroke();
+            inSeg = false;
           }
-        });
-        ctx.stroke();
-      }
-      
-      // Draw lower curve
-      if (lowerPoints.length > 0) {
-        ctx.beginPath();
-        lowerPoints.forEach((point, idx) => {
-          if (idx === 0) {
-            ctx.moveTo(toCanvasX(point.x), toCanvasY(point.y));
-          } else {
-            ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
-          }
-        });
-        ctx.stroke();
-      }
+        }
+        if (inSeg) ctx.stroke();
+      };
+
+      // Draw both branches
+      drawBranch(1);
+      drawBranch(-1);
     }
 
     // Draw addition line
@@ -339,8 +386,8 @@ export const EllipticCurveCanvas = ({
   return (
     <canvas
       ref={canvasRef}
-      width={800}
-      height={600}
+      width={640}
+      height={640}
       className="border border-border rounded-lg bg-card cursor-crosshair"
       onClick={handleCanvasClick}
     />
