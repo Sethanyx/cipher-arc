@@ -286,6 +286,34 @@ export const EllipticCurveCanvas = ({
       ctx.stroke();
       ctx.setLineDash([]);
 
+      // Draw P point and label
+      ctx.fillStyle = "hsl(var(--secondary))";
+      ctx.strokeStyle = "hsl(var(--background))";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x1, y1, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = "hsl(var(--foreground))";
+      ctx.font = "bold 14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("P", x1, y1 - 10);
+
+      // Draw Q point and label
+      ctx.fillStyle = "hsl(var(--secondary))";
+      ctx.strokeStyle = "hsl(var(--background))";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x2, y2, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = "hsl(var(--foreground))";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("Q", x2, y2 - 10);
+
       // Draw result point if exists
       if (line.result && !line.result.isInfinity) {
         ctx.fillStyle = "hsl(var(--accent))";
@@ -295,11 +323,11 @@ export const EllipticCurveCanvas = ({
         const rx = toCanvasX(line.result.x!);
         const ry = toCanvasY(line.result.y!);
         
-        // Draw reflection line
+        // Draw vertical reflection line extending full height
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
-        ctx.moveTo(rx, ry);
-        ctx.lineTo(rx, toCanvasY(curve.p - line.result.y!));
+        ctx.moveTo(rx, padding);
+        ctx.lineTo(rx, height - padding);
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -310,6 +338,13 @@ export const EllipticCurveCanvas = ({
         ctx.strokeStyle = "hsl(var(--background))";
         ctx.lineWidth = 2;
         ctx.stroke();
+        
+        // Draw R label
+        ctx.fillStyle = "hsl(var(--foreground))";
+        ctx.font = "bold 14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("R", rx, ry - 10);
       }
     }
 
