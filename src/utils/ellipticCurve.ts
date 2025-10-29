@@ -295,3 +295,93 @@ export function deriveSharedSecret(
 ): Point {
   return scalarMultiply(privateKey, publicKey, curve);
 }
+
+// Simple hash function for ECDSA (simplified for educational purposes)
+export function simpleHash(message: string): number {
+  let hash = 0;
+  for (let i = 0; i < message.length; i++) {
+    hash = ((hash << 5) - hash + message.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+// ECDSA Signature
+export interface Signature {
+  r: number;
+  s: number;
+}
+
+// Sign a message using ECDSA
+export function signMessage(
+  message: string,
+  privateKey: number,
+  curve: CurveParams
+): Signature {
+  const z = simpleHash(message) % curve.n; // hash of message
+  
+  // Generate random k (in practice, this should be cryptographically secure)
+  let k = generatePrivateKey(curve.n);
+  
+  // Calculate r = (k * G).x mod n
+  const kG = scalarMultiply(k, curve.G, curve);
+  if (kG.isInfinity || kG.x === null) {
+    // Retry with different k if we hit infinity
+    k = generatePrivateKey(curve.n);
+    return signMessage(message, privateKey, curve);
+  }
+  
+  const r = mod(kG.x, curve.n);
+  if (r === 0) {
+    // Retry if r is 0
+    return signMessage(message, privateKey, curve);
+  }
+  
+  // Calculate s = k^-1 * (z + r * privateKey) mod n
+  const kInv = modInverse(k, curve.n);
+  const s = mod(kInv * (z + r * privateKey), curve.n);
+  
+  if (s === 0) {
+    // Retry if s is 0
+    return signMessage(message, privateKey, curve);
+  }
+  
+  return { r, s };
+}
+
+// Verify an ECDSA signature
+export function verifySignature(
+  message: string,
+  signature: Signature,
+  publicKey: Point,
+  curve: CurveParams
+): boolean {
+  const { r, s } = signature;
+  
+  // Check that r and s are in valid range
+  if (r <= 0 || r >= curve.n || s <= 0 || s >= curve.n) {
+    return false;
+  }
+  
+  const z = simpleHash(message) % curve.n;
+  
+  // Calculate w = s^-1 mod n
+  const w = modInverse(s, curve.n);
+  
+  // Calculate u1 = z * w mod n
+  const u1 = mod(z * w, curve.n);
+  
+  // Calculate u2 = r * w mod n
+  const u2 = mod(r * w, curve.n);
+  
+  // Calculate point (x, y) = u1 * G + u2 * publicKey
+  const u1G = scalarMultiply(u1, curve.G, curve);
+  const u2Q = scalarMultiply(u2, publicKey, curve);
+  const point = addPoints(u1G, u2Q, curve);
+  
+  if (point.isInfinity || point.x === null) {
+    return false;
+  }
+  
+  // Verify that r ≡ x (mod n)
+  return mod(point.x, curve.n) === r;
+}

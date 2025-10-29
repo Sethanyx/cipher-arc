@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { EllipticCurveCanvas } from "@/components/EllipticCurveCanvas";
 import { PointCalculator } from "@/components/PointCalculator";
 import { ECDHSimulator } from "@/components/ECDHSimulator";
+import { ECDSASimulator } from "@/components/ECDSASimulator";
 import { CurveConfig } from "@/components/CurveConfig";
 import { defaultCurve, Point, POINT_AT_INFINITY, CurveParams } from "@/utils/ellipticCurve";
 import { Lock } from "lucide-react";
@@ -47,10 +48,11 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="config" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
+          <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-4">
             <TabsTrigger value="config">Configuration</TabsTrigger>
             <TabsTrigger value="visualization">Curve & Operations</TabsTrigger>
             <TabsTrigger value="protocol">ECDH Protocol</TabsTrigger>
+            <TabsTrigger value="signature">Digital Signature</TabsTrigger>
           </TabsList>
 
           <TabsContent value="config" className="space-y-6">
@@ -155,6 +157,10 @@ const Index = () => {
           <TabsContent value="protocol">
             <ECDHSimulator curve={curve} />
           </TabsContent>
+
+          <TabsContent value="signature">
+            <ECDSASimulator curve={curve} />
+          </TabsContent>
         </Tabs>
       </main>
 
@@ -162,7 +168,7 @@ const Index = () => {
       <footer className="border-t border-border/40 mt-12">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
           <p>Educational tool for understanding Elliptic Curve Cryptography</p>
-          <p className="mt-1">ECDH Key Exchange + AES Symmetric Encryption</p>
+          <p className="mt-1">ECDH Key Exchange + AES Encryption + ECDSA Digital Signatures</p>
         </div>
       </footer>
     </div>
