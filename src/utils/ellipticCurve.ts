@@ -317,34 +317,50 @@ export function signMessage(
   privateKey: number,
   curve: CurveParams
 ): Signature {
-  const z = simpleHash(message) % curve.n; // hash of message
-  
+  // Ensure n matches the actual order of G (nG must be Infinity)
+  const n = (() => {
+    const candidate = curve.n;
+    const isValid = scalarMultiply(candidate, curve.G, curve).isInfinity;
+    if (isValid) return candidate;
+    // Compute the real order of G by repeated addition (small p so it's fast)
+    let Q: Point = curve.G;
+    let order = 1;
+    const limit = curve.p + 2 * Math.ceil(Math.sqrt(curve.p)) + 10;
+    while (!Q.isInfinity && order <= limit) {
+      Q = addPoints(Q, curve.G, curve);
+      order++;
+    }
+    return order;
+  })();
+
+  const z = simpleHash(message) % n; // hash of message reduced mod n
+
   // Generate random k (in practice, this should be cryptographically secure)
-  let k = generatePrivateKey(curve.n);
-  
+  let k = generatePrivateKey(n);
+
   // Calculate r = (k * G).x mod n
   const kG = scalarMultiply(k, curve.G, curve);
   if (kG.isInfinity || kG.x === null) {
     // Retry with different k if we hit infinity
-    k = generatePrivateKey(curve.n);
-    return signMessage(message, privateKey, curve);
+    k = generatePrivateKey(n);
+    return signMessage(message, privateKey, { ...curve, n });
   }
-  
-  const r = mod(kG.x, curve.n);
+
+  const r = mod(kG.x, n);
   if (r === 0) {
     // Retry if r is 0
-    return signMessage(message, privateKey, curve);
+    return signMessage(message, privateKey, { ...curve, n });
   }
-  
+
   // Calculate s = k^-1 * (z + r * privateKey) mod n
-  const kInv = modInverse(k, curve.n);
-  const s = mod(kInv * (z + r * privateKey), curve.n);
-  
+  const kInv = modInverse(k, n);
+  const s = mod(kInv * (z + r * privateKey), n);
+
   if (s === 0) {
     // Retry if s is 0
-    return signMessage(message, privateKey, curve);
+    return signMessage(message, privateKey, { ...curve, n });
   }
-  
+
   return { r, s };
 }
 
@@ -356,32 +372,47 @@ export function verifySignature(
   curve: CurveParams
 ): boolean {
   const { r, s } = signature;
-  
+
+  // Ensure we use the actual order of G
+  const n = (() => {
+    const candidate = curve.n;
+    const isValid = scalarMultiply(candidate, curve.G, curve).isInfinity;
+    if (isValid) return candidate;
+    let Q: Point = curve.G;
+    let order = 1;
+    const limit = curve.p + 2 * Math.ceil(Math.sqrt(curve.p)) + 10;
+    while (!Q.isInfinity && order <= limit) {
+      Q = addPoints(Q, curve.G, curve);
+      order++;
+    }
+    return order;
+  })();
+
   // Check that r and s are in valid range
-  if (r <= 0 || r >= curve.n || s <= 0 || s >= curve.n) {
+  if (r <= 0 || r >= n || s <= 0 || s >= n) {
     return false;
   }
-  
-  const z = simpleHash(message) % curve.n;
-  
+
+  const z = simpleHash(message) % n;
+
   // Calculate w = s^-1 mod n
-  const w = modInverse(s, curve.n);
-  
+  const w = modInverse(s, n);
+
   // Calculate u1 = z * w mod n
-  const u1 = mod(z * w, curve.n);
-  
+  const u1 = mod(z * w, n);
+
   // Calculate u2 = r * w mod n
-  const u2 = mod(r * w, curve.n);
-  
+  const u2 = mod(r * w, n);
+
   // Calculate point (x, y) = u1 * G + u2 * publicKey
   const u1G = scalarMultiply(u1, curve.G, curve);
   const u2Q = scalarMultiply(u2, publicKey, curve);
   const point = addPoints(u1G, u2Q, curve);
-  
+
   if (point.isInfinity || point.x === null) {
     return false;
   }
-  
+
   // Verify that r ≡ x (mod n)
-  return mod(point.x, curve.n) === r;
+  return mod(point.x, n) === r;
 }
