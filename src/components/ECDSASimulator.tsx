@@ -39,12 +39,12 @@ export const ECDSASimulator = ({ curve }: Props) => {
     setSignature(null);
     setVerificationResult(null);
     setCurrentStep(1);
-    toast.success("生成了签名者的密钥对!");
+    toast.success("Generated signer's key pair!");
   };
 
   const signDoc = () => {
     if (!signerPrivateKey || !message) {
-      toast.error("请先生成密钥并输入消息！");
+      toast.error("Please generate keys and enter a message first!");
       return;
     }
 
@@ -54,16 +54,16 @@ export const ECDSASimulator = ({ curve }: Props) => {
       setTamperedMessage(message);
       setVerificationResult(null);
       setCurrentStep(2);
-      toast.success("消息已使用私钥签名！");
+      toast.success("Message signed with private key!");
     } catch (error) {
-      toast.error("签名失败！");
+      toast.error("Signing failed!");
       console.error(error);
     }
   };
 
   const verify = (messageToVerify: string) => {
     if (!signature || !signerPublicKey) {
-      toast.error("没有可验证的签名！");
+      toast.error("No signature to verify!");
       return;
     }
 
@@ -73,12 +73,12 @@ export const ECDSASimulator = ({ curve }: Props) => {
       setCurrentStep(3);
       
       if (isValid) {
-        toast.success("✓ 签名验证成功！消息未被篡改。");
+        toast.success("✓ Signature verification successful! Message is authentic.");
       } else {
-        toast.error("✗ 签名验证失败！消息可能被篡改。");
+        toast.error("✗ Signature verification failed! Message may be tampered.");
       }
     } catch (error) {
-      toast.error("验证过程出错！");
+      toast.error("Verification error!");
       console.error(error);
     }
   };
@@ -98,9 +98,9 @@ export const ECDSASimulator = ({ curve }: Props) => {
       {/* Protocol Steps */}
       <Card>
         <CardHeader>
-          <CardTitle>ECDSA 数字签名协议</CardTitle>
+          <CardTitle>ECDSA Digital Signature Protocol</CardTitle>
           <CardDescription>
-            使用椭圆曲线数字签名算法进行消息签名和验证
+            Sign and verify messages using Elliptic Curve Digital Signature Algorithm
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -110,7 +110,7 @@ export const ECDSASimulator = ({ curve }: Props) => {
                 {currentStep >= 1 ? <CheckCircle2 className="h-4 w-4" /> : "1"}
               </Badge>
               <span className={currentStep >= 1 ? "font-medium" : "text-muted-foreground"}>
-                生成签名者的私钥 (d) 和公钥 (Q = d × G)
+                Generate signer's private key (d) and public key (Q = d × G)
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -118,7 +118,7 @@ export const ECDSASimulator = ({ curve }: Props) => {
                 {currentStep >= 2 ? <CheckCircle2 className="h-4 w-4" /> : "2"}
               </Badge>
               <span className={currentStep >= 2 ? "font-medium" : "text-muted-foreground"}>
-                使用私钥对消息进行签名，生成签名 (r, s)
+                Sign the message with private key to generate signature (r, s)
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -126,7 +126,7 @@ export const ECDSASimulator = ({ curve }: Props) => {
                 {currentStep >= 3 ? <CheckCircle2 className="h-4 w-4" /> : "3"}
               </Badge>
               <span className={currentStep >= 3 ? "font-medium" : "text-muted-foreground"}>
-                使用公钥验证签名的有效性
+                Verify signature validity using public key
               </span>
             </div>
           </div>
@@ -138,28 +138,28 @@ export const ECDSASimulator = ({ curve }: Props) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5 text-primary" />
-            密钥生成
+            Key Generation
           </CardTitle>
           <CardDescription>
-            签名者生成椭圆曲线密钥对
+            Signer generates elliptic curve key pair
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={generateKeys} className="w-full">
             <Shield className="mr-2 h-4 w-4" />
-            生成签名密钥对
+            Generate Signing Key Pair
           </Button>
 
           {signerPrivateKey && (
             <div className="space-y-2">
-              <Label className="text-xs">私钥 (d) - 保密</Label>
+              <Label className="text-xs">Private Key (d) - Secret</Label>
               <p className="text-sm font-mono bg-muted p-2 rounded">{signerPrivateKey}</p>
             </div>
           )}
 
           {signerPublicKey && (
             <div className="space-y-2">
-              <Label className="text-xs">公钥 (Q = d × G) - 公开</Label>
+              <Label className="text-xs">Public Key (Q = d × G) - Public</Label>
               <p className="text-sm font-mono bg-muted p-2 rounded break-all">
                 {pointToString(signerPublicKey)}
               </p>
@@ -173,19 +173,19 @@ export const ECDSASimulator = ({ curve }: Props) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileSignature className="h-5 w-5 text-secondary" />
-            消息签名
+            Message Signing
           </CardTitle>
           <CardDescription>
-            使用私钥对消息生成数字签名
+            Generate digital signature for the message using private key
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>原始消息</Label>
+            <Label>Original Message</Label>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="输入要签名的消息..."
+              placeholder="Enter message to sign..."
               rows={3}
             />
           </div>
@@ -197,12 +197,12 @@ export const ECDSASimulator = ({ curve }: Props) => {
             variant="secondary"
           >
             <FileSignature className="mr-2 h-4 w-4" />
-            使用私钥签名
+            Sign with Private Key
           </Button>
 
           {signature && (
             <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-              <Label className="text-sm font-semibold">数字签名 (r, s)</Label>
+              <Label className="text-sm font-semibold">Digital Signature (r, s)</Label>
               <div className="space-y-2">
                 <div>
                   <Label className="text-xs text-muted-foreground">r:</Label>
@@ -228,17 +228,17 @@ export const ECDSASimulator = ({ curve }: Props) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              签名验证
+              Signature Verification
             </CardTitle>
             <CardDescription>
-              使用公钥验证消息签名的真实性
+              Verify message signature authenticity using public key
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-4">
               {/* Original Message Verification */}
               <div className="p-4 border rounded-lg space-y-3">
-                <Label className="text-sm font-semibold">验证原始消息</Label>
+                <Label className="text-sm font-semibold">Verify Original Message</Label>
                 <p className="text-sm bg-muted p-3 rounded">{message}</p>
                 <Button
                   onClick={() => verify(message)}
@@ -246,7 +246,7 @@ export const ECDSASimulator = ({ curve }: Props) => {
                   variant="default"
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  验证原始消息签名
+                  Verify Original Message Signature
                 </Button>
               </div>
 
@@ -254,12 +254,12 @@ export const ECDSASimulator = ({ curve }: Props) => {
               <div className="p-4 border border-destructive/30 rounded-lg space-y-3">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-destructive" />
-                  <Label className="text-sm font-semibold">尝试验证篡改后的消息</Label>
+                  <Label className="text-sm font-semibold">Try Verifying Tampered Message</Label>
                 </div>
                 <Textarea
                   value={tamperedMessage}
                   onChange={(e) => setTamperedMessage(e.target.value)}
-                  placeholder="修改消息内容来测试..."
+                  placeholder="Modify the message to test..."
                   rows={3}
                 />
                 <Button
@@ -268,7 +268,7 @@ export const ECDSASimulator = ({ curve }: Props) => {
                   variant="destructive"
                 >
                   <XCircle className="mr-2 h-4 w-4" />
-                  验证修改后的消息
+                  Verify Modified Message
                 </Button>
               </div>
             </div>
@@ -283,26 +283,26 @@ export const ECDSASimulator = ({ curve }: Props) => {
                   {verificationResult ? (
                     <>
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      <span className="font-semibold text-green-500">验证成功</span>
+                      <span className="font-semibold text-green-500">Verification Successful</span>
                     </>
                   ) : (
                     <>
                       <XCircle className="h-5 w-5 text-destructive" />
-                      <span className="font-semibold text-destructive">验证失败</span>
+                      <span className="font-semibold text-destructive">Verification Failed</span>
                     </>
                   )}
                 </div>
                 <p className="text-sm mt-2 text-muted-foreground">
                   {verificationResult 
-                    ? "签名有效，消息未被篡改，确实由私钥持有者签名。"
-                    : "签名无效！消息可能被篡改，或签名不匹配。"
+                    ? "Signature is valid. Message has not been tampered with and was indeed signed by the private key holder."
+                    : "Signature is invalid! Message may have been tampered with or signature does not match."
                   }
                 </p>
               </div>
             )}
 
             <Button onClick={reset} variant="outline" className="w-full">
-              重置演示
+              Reset Demo
             </Button>
           </CardContent>
         </Card>
@@ -311,23 +311,23 @@ export const ECDSASimulator = ({ curve }: Props) => {
       {/* Educational Info */}
       <Card className="bg-muted/30">
         <CardHeader>
-          <CardTitle className="text-lg">ECDSA 工作原理</CardTitle>
+          <CardTitle className="text-lg">How ECDSA Works</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <p><strong>签名生成：</strong></p>
+          <p><strong>Signature Generation:</strong></p>
           <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
-            <li>计算消息哈希 z = hash(message)</li>
-            <li>生成随机数 k，计算点 (x, y) = k × G</li>
+            <li>Calculate message hash z = hash(message)</li>
+            <li>Generate random k, calculate point (x, y) = k × G</li>
             <li>r = x mod n</li>
             <li>s = k⁻¹(z + r·d) mod n</li>
-            <li>签名为 (r, s)</li>
+            <li>Signature is (r, s)</li>
           </ul>
-          <p className="mt-3"><strong>签名验证：</strong></p>
+          <p className="mt-3"><strong>Signature Verification:</strong></p>
           <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
-            <li>计算 w = s⁻¹ mod n</li>
-            <li>u₁ = z·w mod n，u₂ = r·w mod n</li>
-            <li>计算点 (x, y) = u₁×G + u₂×Q</li>
-            <li>验证 r ≡ x (mod n)</li>
+            <li>Calculate w = s⁻¹ mod n</li>
+            <li>u₁ = z·w mod n, u₂ = r·w mod n</li>
+            <li>Calculate point (x, y) = u₁×G + u₂×Q</li>
+            <li>Verify r ≡ x (mod n)</li>
           </ul>
         </CardContent>
       </Card>
